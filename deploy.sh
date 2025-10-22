@@ -254,10 +254,11 @@ deploy_application() {
 configure_nginx_proxy() {
     log INFO "--- 7. Configuring NGINX Reverse Proxy ---"
     
-    # FIX: Use the reliable NGINX configuration directory for Amazon Linux/RHEL
+    # FIX 1: Use the reliable NGINX configuration directory for Amazon Linux/RHEL
     local NGINX_CONF_PATH="/etc/nginx/conf.d/hng_proxy.conf" 
     
-    # NGINX configuration block template
+    # NGINX configuration block template: Only contains the raw NGINX config text.
+    # Note the double-escaped NGINX variables (\\$) for safe transport.
     NGINX_CONFIG=$(cat <<EOF
 server {
     listen 80;
@@ -267,15 +268,17 @@ server {
     location / {
         proxy_pass http://localhost:$CONTAINER_PORT;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade \\\$http_upgrade;
         proxy_set_header Connection upgrade;
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header Host \\\$host;
+        proxy_cache_bypass \\\$http_upgrade;
     }
 }
 EOF
 )
 
+    # FIX 2: Correct structure for NGINX_CMD which executes the commands remotely.
+    # The echo command here uses the correctly defined and escaped NGINX_CONFIG variable.
     local NGINX_CMD="
     set -e;
 
