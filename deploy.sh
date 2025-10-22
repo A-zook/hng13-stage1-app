@@ -9,7 +9,8 @@
 # --- Global Variables & Configuration ---
 APP_DIR="hng-docker-app"  # Local folder name to clone the repository into
 LOG_FILE="deploy_$(date +%Y%m%d_%H%M%S).log"
-NGINX_CONF_PATH="/etc/nginx/sites-available/default"
+#NGINX_CONF_PATH="/etc/nginx/sites-available/default"
+NGINX_CONF_PATH="/etc/nginx/nginx.conf"
 REMOTE_PROJECT_PATH="/home/${USERNAME}/${APP_DIR}"
 NGINX_RESTART_CMD="sudo systemctl reload nginx"
 APP_CONTAINER_NAME="${APP_DIR}_container"
