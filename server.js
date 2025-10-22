@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 // This is the internal container port that NGINX will proxy to
-const PORT = 8080; 
+const PORT = 8080;
 
 app.get('/', (req, res) => {
   res.send(`
@@ -25,6 +25,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.listen(PORT, () => {
-  console.log(\`App listening at http://localhost:\${PORT}\`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(` Server is running and accessible on port ${PORT}`);
 });
