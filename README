@@ -1,0 +1,104 @@
+HNG13 DevOps Stage 1: Automated Deployment Bash Script
+
+This repository contains the deploy.sh script for the HNG13 Stage 1 task. This single Bash script automates the end-to-end deployment of a Dockerized application to a remote Linux server, handling cloning, dependency installation, Docker build/run, and NGINX reverse proxy configuration.
+
+Script: deploy.sh
+
+The script is designed to be production-grade, incorporating:
+
+Secure parameter collection (including PAT and SSH key path).
+
+Error handling (trap functions and explicit checks for failed commands).
+
+Idempotency checks (graceful handling of existing repositories, dependencies, and containers).
+
+Full NGINX configuration to forward port 80 traffic to the specified internal container port.
+
+Detailed logging to a timestamped file.
+
+Prerequisites
+
+Before running the script, ensure you have:
+
+A Live Linux VPS: Accessible via SSH (e.g., AWS EC2, DigitalOcean Droplet).
+
+A Dedicated SSH Key: The script requires the path to a private SSH key that grants access to the remote server.
+
+GitHub Personal Access Token (PAT): Required to securely clone private repositories. The PAT needs the repo scope.
+
+A Dockerized Application: The target Git repository must contain either a Dockerfile or a docker-compose.yml in its root directory.
+
+Security Group: Crucially, ensure that the cloud provider's firewall (e.g., AWS Security Group) allows inbound traffic on TCP Port 80 from 0.0.0.0/0.
+
+Usage
+
+Make the script executable:
+
+chmod +x deploy.sh
+
+
+Run the script:
+
+./deploy.sh
+
+
+The script will guide you through collecting all necessary parameters:
+
+Parameter
+
+Example Value
+
+Description
+
+Git Repository URL
+
+https://github.com/user/my-app.git
+
+HTTPS URL for the application repository.
+
+Personal Access Token (PAT)
+
+ghp_xxxxxxxxxxxxxxxxxxxxx
+
+GitHub PAT (input is masked).
+
+Branch Name
+
+dev (or leave blank for main)
+
+Branch to deploy.
+
+Remote Server Username
+
+ubuntu or ec2-user
+
+The SSH login user on the remote server.
+
+Server IP Address
+
+192.168.1.100
+
+The public IP of the remote server.
+
+Path to SSH Key
+
+~/.ssh/my_key
+
+Full path to the private SSH key file.
+
+Container Internal Port
+
+3000
+
+The port the application runs on inside the Docker container.
+
+Optional Cleanup Mode
+
+To remove all artifacts (containers, images, and the project folder) on the remote server, run:
+
+./deploy.sh --cleanup
+
+
+Logging
+
+All script output is logged to a timestamped file in the current directory (e.g., deploy_YYYYMMDD_HHMMSS.log). Check this file for detailed success and failure messages.
