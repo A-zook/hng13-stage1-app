@@ -253,39 +253,34 @@ deploy_application() {
 configure_nginx_proxy() {
     log INFO "--- 7. Configuring NGINX Reverse Proxy ---"
     
-    # NGINX configuration block template
-    NGINX_CONFIG=$(cat <<EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:$CONTAINER_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-        # SSL readiness placeholder (optional)
-        # Uncomment the following lines when SSL is ready:
-        # return 301 https://\$host\$request_uri;
-    }
-}
-EOF
-)
-
+    # FIX 2: Remote command uses SED to safely replace the existing server block.
+    # This prevents the "No such file or directory" error by editing the main config.
     local NGINX_CMD="
     set -e;
     
-    # Write the new configuration file
-    echo \"$NGINX_CONFIG\" | sudo tee $NGINX_CONF_PATH > /dev/null || exit 1;
+    # Check if the NGINX config file exists
+    if [ ! -f $NGINX_CONF_PATH ]; then
+        echo 'NGINX configuration file not found at $NGINX_CONF_PATH. Cannot configure proxy.'
+        exit 1
+    fi
 
+    # Backup the original file before modifying
+    sudo cp $NGINX_CONF_PATH $NGINX_CONF_PATH.bak
+
+    # Use SED to replace the default 'server {}' block with the reverse proxy config.
+    # The sed command finds the opening 'server {' and replaces everything until the closing '}'
+    # We must escape newlines and other characters for the remote execution.
+    # This is a highly reliable way to override the default on RHEL/Amazon Linux.
+
+    sudo sed -i '/server {/,/}/c\\\n\n    server {\n        listen 80;\n        listen [::]:80;\n        server_name _;\n\n        location / {\n            proxy_pass http://localhost:$CONTAINER_PORT;\n            proxy_http_version 1.1;\n            proxy_set_header Upgrade \$http_upgrade;\n            proxy_set_header Connection '"'"'upgrade'"'"';\n            proxy_set_header Host \$host;\n            proxy_cache_bypass \$http_upgrade;\n        }\n    }\n' $NGINX_CONF_PATH
+    
     echo 'Testing Nginx configuration...'
     sudo nginx -t
 
     if [ \$? -ne 0 ]; then
-        echo 'Nginx configuration test failed!' && exit 1
+        echo 'Nginx configuration test failed! Restoring backup.' 
+        sudo cp $NGINX_CONF_PATH.bak $NGINX_CONF_PATH
+        exit 1
     fi
 
     echo 'Reloading Nginx service...'
